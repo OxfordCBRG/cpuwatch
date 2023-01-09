@@ -1,6 +1,6 @@
 Name: cpuwatch
-Version: 1.0
-Release: 2%{?dist}
+Version: 1.1
+Release: 1%{?dist}
 Summary: Dynamic user niceing service
 
 License: MIT
