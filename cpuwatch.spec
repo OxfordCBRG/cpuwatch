@@ -1,5 +1,5 @@
 Name: cpuwatch
-Version: 1.1
+Version: 1.2.1
 Release: 1%{?dist}
 Summary: Dynamic user niceing service
 
