@@ -30,6 +30,30 @@ inline const vector<string> split_on_space(const string &path)
     return vector<string>((istream_iterator<string>(iss)),istream_iterator<string>());
 }
 
+// Parse /proc/PID/stat, taking into account the brackets and spaces in the "comm" field
+// Also enforces that there are exactly 52 entries, as a check against format changes.
+inline const vector<string> parse_stats(const string &stats)
+{
+    const string s = file_to_string(stats); 
+    string::size_type x = s.find_first_of(" ");
+    if (x == string::npos)
+        throw runtime_error("Could not parse pid from stat");
+    string::size_type y = s.find_first_of("(");
+    if (y == string::npos)
+        throw runtime_error("Could not parse comm start from stat");
+    string::size_type z = s.find_first_of(")");
+    if (z == string::npos)
+        throw runtime_error("Could not parse comm end from stat");
+    string pid = s.substr(0,x);
+    string comm = s.substr(y+1, z-y-1);
+    vector<string> v = split_on_space(s.substr(z+1));
+    v.insert(v.begin(), comm);
+    v.insert(v.begin(), pid);
+    if (v.size() != 52)
+        throw runtime_error("stat has the wrong number of fields");
+    return v;
+}
+
 inline void do_nice(uid_t uid, int newnice)
 {
     errno = 0;
@@ -86,7 +110,7 @@ inline void get_data(unordered_map<uid_t, float> &present)
             if (statbuf.st_uid <= MAX_SYSTEM_UID)
                 continue; // Ignore system processes
             present.try_emplace(statbuf.st_uid, 0.0); // Does nothing if key exists
-            const auto stats = split_on_space(file_to_string(pid_root + "/stat"));
+            const auto stats = parse_stats(pid_root + "/stat");
             // Total CPU time is the sum of user time and system time
             const float cputime = stof(stats.at(13)) + stof(stats.at(14));
             present[statbuf.st_uid] += cputime;
