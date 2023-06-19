@@ -14,6 +14,7 @@ using namespace std;
 const int SAMPLE_RATE_SECONDS = 5;
 const int MAX_SYSTEM_UID = 999; // Ignore all processes owned by UIDs <= MAX_SYSTEM_UID
 const float SCALING_FACTOR = 2; // 100% CPU * SCALING_FACTOR = 1 niceness unit
+bool FIELD_NUM_WARN = true;
 
 // Read the whole of a file into a single string, removing the final '\n'
 inline const string file_to_string(const string &path)
@@ -41,7 +42,7 @@ inline const vector<string> parse_stats(const string &stats)
     string::size_type y = s.find_first_of("(");
     if (y == string::npos)
         throw runtime_error("Could not parse comm start from stat");
-    string::size_type z = s.find_first_of(")");
+    string::size_type z = s.find_last_of(")");
     if (z == string::npos)
         throw runtime_error("Could not parse comm end from stat");
     string pid = s.substr(0,x);
@@ -49,8 +50,12 @@ inline const vector<string> parse_stats(const string &stats)
     vector<string> v = split_on_space(s.substr(z+1));
     v.insert(v.begin(), comm);
     v.insert(v.begin(), pid);
-    if (v.size() != 52)
+    if ((v.size() != 52) && (FIELD_NUM_WARN == true))
+      {
+	FIELD_NUM_WARN = false;
+        cerr << "WARN: Cannot parse " << stats << endl;
         throw runtime_error("stat has the wrong number of fields");
+      }
     return v;
 }
 

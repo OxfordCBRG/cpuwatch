@@ -1,5 +1,5 @@
-version = 1.3
-release = 1
+version = 1.4
+release = 4
 all : cpuwatch
 cpuwatch : cpuwatch.cpp 
 	g++ -O3 -Wall -Wextra -Wpedantic -Werror -std=c++20 -o cpuwatch cpuwatch.cpp 
@@ -16,4 +16,4 @@ deb : prefix = ./cpuwatch_$(version)-$(release)/
 deb : all fake_install
 	sed -i 's/Version: .*/Version: $(version)-$(release)/' DEBIAN/control
 	cp -ar DEBIAN cpuwatch_$(version)-$(release)
-	dpkg-deb --build cpuwatch_$(version)-$(release)
+	dpkg-deb --build --root-owner-group cpuwatch_$(version)-$(release)
