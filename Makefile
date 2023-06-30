@@ -1,5 +1,5 @@
-version = 1.4
-release = 4
+version = 1.5
+release = 1
 all : cpuwatch
 cpuwatch : cpuwatch.cpp 
 	g++ -O3 -Wall -Wextra -Wpedantic -Werror -std=c++20 -o cpuwatch cpuwatch.cpp 

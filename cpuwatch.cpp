@@ -3,11 +3,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <algorithm>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <unordered_map>
-#include <vector>
 
 using namespace std;
 
@@ -24,16 +25,17 @@ inline const string file_to_string(const string &path)
     return(contents.substr(0,contents.length()-1));
 }
  
-// Get a file as a vector of strings, splits on any character in [:space:]
-inline const vector<string> split_on_space(const string &path)
+// Get a file as a deque of strings, splits on any character in [:space:]
+inline const deque<string> split_on_space(const string &path)
 {
     istringstream iss(path);
-    return vector<string>((istream_iterator<string>(iss)),istream_iterator<string>());
+    return deque<string>((istream_iterator<string>(iss)),istream_iterator<string>());
 }
 
 // Parse /proc/PID/stat, taking into account the brackets and spaces in the "comm" field
 // Also enforces that there are exactly 52 entries, as a check against format changes.
-inline const vector<string> parse_stats(const string &stats)
+// Use a deque for random access later and O(1) insertion at the front now.
+inline const deque<string> parse_stats(const string &stats)
 {
     const string s = file_to_string(stats); 
     string::size_type x = s.find_first_of(" ");
@@ -47,16 +49,16 @@ inline const vector<string> parse_stats(const string &stats)
         throw runtime_error("Could not parse comm end from stat");
     string pid = s.substr(0,x);
     string comm = s.substr(y+1, z-y-1);
-    vector<string> v = split_on_space(s.substr(z+1));
-    v.insert(v.begin(), comm);
-    v.insert(v.begin(), pid);
-    if ((v.size() != 52) && (FIELD_NUM_WARN == true))
+    deque<string> res = split_on_space(s.substr(z+1));
+    res.push_front(comm);
+    res.push_front(pid);
+    if ((res.size() != 52) && (FIELD_NUM_WARN == true))
       {
-	FIELD_NUM_WARN = false;
-        cerr << "WARN: Cannot parse " << stats << endl;
+	    FIELD_NUM_WARN = false;
+        cerr << "WARN: Cannot parse '" << stats << "'\n";
         throw runtime_error("stat has the wrong number of fields");
       }
-    return v;
+    return res;
 }
 
 inline void do_nice(uid_t uid, int newnice)
